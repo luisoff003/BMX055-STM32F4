@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "BMX055.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,7 +43,7 @@
  I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
-uint8_t buffer[] = "Hello World";
+uint8_t buffer[30] = "Hello World";
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -66,7 +66,9 @@ extern uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	uint32_t debug = 0;
+	uint8_t size = 0;
+	uint8_t readData;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -91,6 +93,8 @@ int main(void)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
 
+  SearchDevice(&hi2c1);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -100,8 +104,25 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  CDC_Transmit_FS(buffer, sizeof(buffer));
+	  HAL_Delay(100);
 
+	  debug = BMX055_Init(&hi2c1);
+	  //debug = HAL_I2C_Mem_Read(&hi2c1, BMX055_ACC_SLAVE_ADDRESS_DEFAULT<<1, BMX055_WHO_AM_I_REG, 1, &readData, 1, 500);
+	  size = sprintf((char *)buffer, "WHO IAM 0x%X Shall be 0x%X\n\r", (int)readData, (int)BMX055_ACC_DEVICE);
+	  CDC_Transmit_FS(buffer, size);
+	  debug = 0;
+
+	  //debug = HAL_I2C_Mem_Read(&hi2c1, BMX055_GYRO_SLAVE_ADDRESS_DEFAULT<<1, BMX055_WHO_AM_I_REG, 1, &readData, 1, 500);
+
+	  size = sprintf((char *)buffer, "WHO IAM 0x%X\n\r", (int)readData);
+	  CDC_Transmit_FS(buffer, size);
+	  debug = 0;
+
+
+	 // debug = HAL_I2C_Mem_Read(&hi2c1, BMX055_MAG_SLAVE_ADDRESS_DEFAULT<<1, BMX055_WHO_AM_I_REG, 1, &readData, 1, 500);
+	  size = sprintf((char *)buffer, "WHO IAM 0x%X\n\r", (int)readData);
+	  CDC_Transmit_FS(buffer, size);
+	  debug= 0;
 
   }
   /* USER CODE END 3 */
