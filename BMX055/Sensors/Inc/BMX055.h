@@ -20,10 +20,18 @@
 #define BMX055_MAG_SLAVE_ADDRESS_DEFAULT 0x10
 /// @}
 
-/** Who_am_i register */
+/** Who_am_i register ACC & GYRO */
 #define BMX055_WHO_AM_I_REG 0x00
-/** Device check register */
+/** Who am I register MAG*/
+#define BMX055_WHO_AM_I_MAG_REG 0x40
+/** Magnetometer WAKEUP */
+#define BMX055_MAG_WK_UP 0x01
+/** Device check register ACC */
 #define BMX055_ACC_DEVICE		0xFA
+/** Device check register GYR */
+#define BMX055_GYRO_DEVICE		0x0F
+/** Device check register MAG */
+#define BMX055_MAG_DEVICE 		0x32
 /** Reset register */
 #define BMX055_RESET_REG		0x14
 /** Soft reset parameter */
@@ -64,18 +72,18 @@
 
 /// @name Accel MPU Range Parameter
 /// @{
-#define BMX055_ACC_RANGE_2		0b0011
-#define BMX055_ACC_RANGE_4		0b0101
-#define BMX055_ACC_RANGE_8		0b1000
-#define BMX055_ACC_RANGE_16		0b1100
+#define BMX055_ACC_RANGE_2G		0x03
+#define BMX055_ACC_RANGE_4G		0x05
+#define BMX055_ACC_RANGE_8G		0x08
+#define BMX055_ACC_RANGE_16G	0x0C
 /// @}
 
 /// @name Accel MPU Band Width Parameter(Hz)
 /// @{
-#define BMX055_ACC_PMU_BW_7_81	0b01000
-#define BMX055_ACC_PMU_BW_15_63	0b01001
-#define BMX055_ACC_PMU_BW_31_25	0b01010
-#define BMX055_ACC_PMU_BW_62_5	0b01011
+#define BMX055_ACC_PMU_BW_7_81		0b01000
+#define BMX055_ACC_PMU_BW_15_63		0b01001
+#define BMX055_ACC_PMU_BW_31_25		0b01010
+#define BMX055_ACC_PMU_BW_62_5		0b01011
 #define BMX055_ACC_PMU_BW_125		0b01100
 #define BMX055_ACC_PMU_BW_250		0b01101
 #define BMX055_ACC_PMU_BW_500		0b01110
@@ -103,6 +111,10 @@
 #define BMX055_ACC_PMU_LPW_SLEEP_DUR_100MS	0b11010
 #define BMX055_ACC_PMU_LPW_SLEEP_DUR_500MS	0b11100
 #define BMX055_ACC_PMU_LPW_SLEEP_DUR_1S			0b11110
+
+#define BMX055_ACC_PMU_SELF_TEST 0x32
+#define BMX055_ACC_TRIM_NVM_CTRL 0x33
+#define BMX055_ACC_BGW_SPI3_WDT  0x34
 /// @}
 
 /// @name Gyro Measurement Range Parameter(Resolution:LSB/°/s)
@@ -174,8 +186,56 @@
 /// @{
 #define BMX055_MAG_POW_CTL_SOFT_RESET		0b10000010
 #define BMX055_MAG_POW_CTL_SLEEP_MODE		0b00000001
-#define BMX055_MAG_POW_CTL_SUSPEND_MODE	0b00000000
+#define BMX055_MAG_POW_CTL_SUSPEND_MODE		0b00000000
 /// @}
+
+enum ACCBW {    // define BMX055 accelerometer bandwidths
+  ABW_8Hz,      // 7.81 Hz,  64 ms update time
+  ABW_16Hz,     // 15.63 Hz, 32 ms update time
+  ABW_31Hz,     // 31.25 Hz, 16 ms update time
+  ABW_63Hz,     // 62.5  Hz,  8 ms update time
+  ABW_125Hz,    // 125   Hz,  4 ms update time
+  ABW_250Hz,    // 250   Hz,  2 ms update time
+  ABW_500Hz,    // 500   Hz,  1 ms update time
+  ABW_100Hz     // 1000  Hz,  0.5 ms update time
+};
+
+enum Gscale {
+  GFS_2000DPS = 0,
+  GFS_1000DPS,
+  GFS_500DPS,
+  GFS_250DPS,
+  GFS_125DPS
+};
+
+enum GODRBW {
+  G_2000Hz523Hz = 0, // 2000 Hz ODR and unfiltered (bandwidth 523Hz)
+  G_2000Hz230Hz,
+  G_1000Hz116Hz,
+  G_400Hz47Hz,
+  G_200Hz23Hz,
+  G_100Hz12Hz,
+  G_200Hz64Hz,
+  G_100Hz32Hz  // 100 Hz ODR and 32 Hz bandwidth
+};
+
+enum MODR {
+  MODR_10Hz = 0,   // 10 Hz ODR
+  MODR_2Hz     ,   // 2 Hz ODR
+  MODR_6Hz     ,   // 6 Hz ODR
+  MODR_8Hz     ,   // 8 Hz ODR
+  MODR_15Hz    ,   // 15 Hz ODR
+  MODR_20Hz    ,   // 20 Hz ODR
+  MODR_25Hz    ,   // 25 Hz ODR
+  MODR_30Hz        // 30 Hz ODR
+};
+
+enum Mmode {
+  lowPower         = 0,   // rms noise ~1.0 microTesla, 0.17 mA power
+  Regular             ,   // rms noise ~0.6 microTesla, 0.5 mA power
+  enhancedRegular     ,   // rms noise ~0.5 microTesla, 0.8 mA power
+  highAccuracy            // rms noise ~0.3 microTesla, 4.9 mA power
+};
 
 
 typedef struct
@@ -201,5 +261,7 @@ typedef struct
 uint8_t BMX055_Init(I2C_HandleTypeDef *I2Cx);
 
 uint8_t SearchDevice(I2C_HandleTypeDef *I2Cx);
+
+void readAccelData(int16_t *destination, I2C_HandleTypeDef *I2Cx);
 
 #endif /* BMX055_H_ */

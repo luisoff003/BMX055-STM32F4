@@ -69,6 +69,7 @@ int main(void)
 	uint32_t debug = 0;
 	uint8_t size = 0;
 	uint8_t readData;
+	uint8_t writeData;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -93,7 +94,12 @@ int main(void)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
 
-  SearchDevice(&hi2c1);
+//  SearchDevice(&hi2c1);
+
+
+  if(BMX055_Init(&hi2c1) != 0 ){
+	  while(1);
+  }
 
   /* USER CODE END 2 */
 
@@ -106,23 +112,31 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	  HAL_Delay(100);
 
-	  debug = BMX055_Init(&hi2c1);
-	  //debug = HAL_I2C_Mem_Read(&hi2c1, BMX055_ACC_SLAVE_ADDRESS_DEFAULT<<1, BMX055_WHO_AM_I_REG, 1, &readData, 1, 500);
-	  size = sprintf((char *)buffer, "WHO IAM 0x%X Shall be 0x%X\n\r", (int)readData, (int)BMX055_ACC_DEVICE);
+	  //debug = BMX055_Init(&hi2c1);
+//	  debug = HAL_I2C_Mem_Read(&hi2c1, BMX055_ACC_SLAVE_ADDRESS_DEFAULT<<1, BMX055_WHO_AM_I_REG, 1, &readData, 1, 500);
+//	  size = sprintf((char *)buffer, "WHO IAM 0x%X Shall be 0x%X\n\r", (int)readData, (int)BMX055_ACC_DEVICE);
+//	  CDC_Transmit_FS(buffer, size);
+//	  debug = 0;
+//
+//	  debug = HAL_I2C_Mem_Read(&hi2c1, BMX055_GYRO_SLAVE_ADDRESS_DEFAULT<<1, BMX055_WHO_AM_I_REG, 1, &readData, 1, 500);
+//	  size = sprintf((char *)buffer, "WHO IAM 0x%X Shall be 0x%X\n\r", (int)readData, (int)0x0F);
+//	  CDC_Transmit_FS(buffer, size);
+//	  debug = 0;
+//
+//	  /* Wakeup Magnetometer */
+//	  writeData = 0x01;
+//	  HAL_I2C_Mem_Write(&hi2c1, BMX055_MAG_SLAVE_ADDRESS_DEFAULT<<1, BMX055_MAG_POW_CTL_REG, 1, &writeData, 1, 500);
+//	  debug = HAL_I2C_Mem_Read(&hi2c1, BMX055_MAG_SLAVE_ADDRESS_DEFAULT<<1, BMX055_WHO_AM_I_MAG_REG, 1, &readData, 1, 500);
+//	  size = sprintf((char *)buffer, "WHO IAM 0x%X Shall be 0x%X\n\r", (int)readData, (int)0x32);
+//	  CDC_Transmit_FS(buffer, size);
+//	  debug= 0;
+
+	  int16_t destination[3];
+	  readAccelData(destination, &hi2c1);
+
+	  size = sprintf((char *)buffer, "Acc: %d %d %d\n\r", (int)destination[0], (int)destination[1], (int)destination[2]);
 	  CDC_Transmit_FS(buffer, size);
-	  debug = 0;
 
-	  //debug = HAL_I2C_Mem_Read(&hi2c1, BMX055_GYRO_SLAVE_ADDRESS_DEFAULT<<1, BMX055_WHO_AM_I_REG, 1, &readData, 1, 500);
-
-	  size = sprintf((char *)buffer, "WHO IAM 0x%X\n\r", (int)readData);
-	  CDC_Transmit_FS(buffer, size);
-	  debug = 0;
-
-
-	 // debug = HAL_I2C_Mem_Read(&hi2c1, BMX055_MAG_SLAVE_ADDRESS_DEFAULT<<1, BMX055_WHO_AM_I_REG, 1, &readData, 1, 500);
-	  size = sprintf((char *)buffer, "WHO IAM 0x%X\n\r", (int)readData);
-	  CDC_Transmit_FS(buffer, size);
-	  debug= 0;
 
   }
   /* USER CODE END 3 */
