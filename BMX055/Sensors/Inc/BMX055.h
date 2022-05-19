@@ -24,8 +24,8 @@
 #define BMX055_WHO_AM_I_REG 0x00
 /** Who am I register MAG*/
 #define BMX055_WHO_AM_I_MAG_REG 0x40
-/** Magnetometer WAKEUP */
-#define BMX055_MAG_WK_UP 0x01
+/** Magnetometer Sleep Mode */
+#define BMX055_MAG_SLEEP_MODE 	0x01
 /** Device check register ACC */
 #define BMX055_ACC_DEVICE		0xFA
 /** Device check register GYR */
@@ -41,13 +41,13 @@
 /// @{
 #define BMX055_ACC_DATA_START_REG			0x02
 #define BMX055_ACC_PMU_RANGE_REG			0x0F
-#define BMX055_ACC_PMU_BW_REG					0x10
+#define BMX055_ACC_PMU_BW_REG				0x10
 #define BMX055_ACC_PMU_LPW_REG				0x11
 /// @}
 
 /// @name BMX055 Gyro Register
 /// @{
-#define BMX055_GYRO_DATA_START_REG	0x02
+#define BMX055_GYRO_DATA_START_REG			0x02
 #define BMX055_GYRO_RANGE_REG				0x0F
 #define BMX055_GYRO_BW_REG					0x10
 #define BMX055_GYRO_LPM1_REG				0x11
@@ -117,16 +117,21 @@
 #define BMX055_ACC_BGW_SPI3_WDT  0x34
 /// @}
 
-/// @name Gyro Measurement Range Parameter(Resolution:LSB/°/s)
+/// @name Gyroscope Measurement Range
 /// @{
-#define BMX055_GYRO_RANGE_16_4	0b000
-#define BMX055_GYRO_RANGE_32_8	0b001
-#define BMX055_GYRO_RANGE_65_6	0b010
-#define BMX055_GYRO_RANGE_131_2	0b011
-#define BMX055_GYRO_RANGE_262_4	0b100
+/* Scale +-2000°/s Resolution 16.4 LSB/°/s <-> 61m°/s /LSB */
+#define BMX055_GYRO_RANGE_2000	0x00
+/* Scale +-1000°/s Resolution 32.8 LSB/°/s <-> 30.5m°/s /LSB */
+#define BMX055_GYRO_RANGE_1000	0x01
+/* Scale +-500°/s Resolution 65.6 LSB/°/s <-> 15.3m°/s /LSB */
+#define BMX055_GYRO_RANGE_500	0x02
+/* Scale +-250°/s Resolution 131.2 LSB/°/s <-> 7.6m°/s /LSB */
+#define BMX055_GYRO_RANGE_250	0x03
+/* Scale +-125°/s Resolution 262.4 LSB/°/s <-> 3.8m°/s /LSB */
+#define BMX055_GYRO_RANGE_125	0x04
 /// @}
 
-/// @name Gyro MPU Band Width Parameter(Hz)
+/// @name Gyroscope MPU Band Width Filter Parameter(Hz)
 /// @{
 #define BMX055_GYRO_BW_32		0b0111
 #define BMX055_GYRO_BW_64		0b0110
@@ -263,5 +268,9 @@ uint8_t BMX055_Init(I2C_HandleTypeDef *I2Cx);
 uint8_t SearchDevice(I2C_HandleTypeDef *I2Cx);
 
 void readAccelData(int16_t *destination, I2C_HandleTypeDef *I2Cx);
+
+void readGyroData(int16_t *destination, I2C_HandleTypeDef *I2Cx);
+
+void readMagData(int16_t *destination, I2C_HandleTypeDef *I2Cx);
 
 #endif /* BMX055_H_ */

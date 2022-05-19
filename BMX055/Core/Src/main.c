@@ -43,7 +43,7 @@
  I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
-uint8_t buffer[30] = "Hello World";
+uint8_t buffer[100] = "Hello World";
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -131,10 +131,19 @@ int main(void)
 //	  CDC_Transmit_FS(buffer, size);
 //	  debug= 0;
 
-	  int16_t destination[3];
-	  readAccelData(destination, &hi2c1);
+	  int16_t rawAcc[3];
+	  int16_t rawGyro[3];
+	  int16_t rawMag[3];
+	  readAccelData(rawAcc, &hi2c1);
+	  size = sprintf((char *)buffer, "Acc: %d %d %d ", (int)rawAcc[0], (int)rawAcc[1], (int)rawAcc[2]);
+	  CDC_Transmit_FS(buffer, size);
 
-	  size = sprintf((char *)buffer, "Acc: %d %d %d\n\r", (int)destination[0], (int)destination[1], (int)destination[2]);
+	  readGyroData(rawGyro, &hi2c1);
+	  size = sprintf((char *)buffer, " Gyro %d %d %d ",rawGyro[0], rawGyro[1], rawGyro[2]);
+	  CDC_Transmit_FS(buffer, size);
+
+	  readMagData(rawMag, &hi2c1);
+	  size = sprintf((char *)buffer, " Mag %d %d %d\n\r",rawMag[0], rawMag[1], rawMag[2]);
 	  CDC_Transmit_FS(buffer, size);
 
 
