@@ -103,16 +103,16 @@ uint8_t BMX055_Init(I2C_HandleTypeDef *I2Cx){
 //	HAL_I2C_Mem_Write(I2Cx, BMX055_MAG_SLAVE_ADDRESS_DEFAULT<<1, BMX055_MAG_POW_CTL_REG, 1, &writeData, 1, 500);
 
 	/* Normal Mode */
-//	writeData = 0x00;
-//	HAL_I2C_Mem_Write(I2Cx, BMX055_MAG_SLAVE_ADDRESS_DEFAULT<<1, BMX055_MAG_ADV_OP_OUTPUT_REG, 1, &writeData, 1, 500);
+	writeData = 0x00;
+	HAL_I2C_Mem_Write(I2Cx, BMX055_MAG_SLAVE_ADDRESS_DEFAULT<<1, BMX055_MAG_ADV_OP_OUTPUT_REG, 1, &writeData, 1, 500);
 
 	/* Repetitions for X-Y Axis 0x04 -> 0b0100 -> 1+2(2^2) = 9 */
-//	writeData = 0x04;
-//	HAL_I2C_Mem_Write(I2Cx, BMX055_MAG_SLAVE_ADDRESS_DEFAULT<<1, BMX055_MAG_REP_XY_REG, 1, &writeData, 1, 500);
-//
-//	/* Repetitions for Z Axis 0x0F -> 0b1111 -> 1+(2^3 + 2^2 + 2^1 + 2^0) = 15 */
-//	writeData = 0x0E;
-//	HAL_I2C_Mem_Write(I2Cx, BMX055_MAG_SLAVE_ADDRESS_DEFAULT<<1, BMX055_MAG_REP_Z_REG, 1, &writeData, 1, 500);
+	writeData = 0x04;
+	HAL_I2C_Mem_Write(I2Cx, BMX055_MAG_SLAVE_ADDRESS_DEFAULT<<1, BMX055_MAG_REP_XY_REG, 1, &writeData, 1, 500);
+
+	/* Repetitions for Z Axis 0x0F -> 0b1111 -> 1+(2^3 + 2^2 + 2^1 + 2^0) = 15 */
+	writeData = 0x0E;
+	HAL_I2C_Mem_Write(I2Cx, BMX055_MAG_SLAVE_ADDRESS_DEFAULT<<1, BMX055_MAG_REP_Z_REG, 1, &writeData, 1, 500);
 
 
 	/* Self test and reporting */
