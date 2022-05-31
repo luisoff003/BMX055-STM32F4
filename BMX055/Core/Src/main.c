@@ -56,7 +56,7 @@ extern uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+BMX055_t data_BMX055;
 /* USER CODE END 0 */
 
 /**
@@ -96,9 +96,11 @@ int main(void)
 
 //  SearchDevice(&hi2c1);
 
-
-  if(BMX055_Init(&hi2c1) != 0 ){
-	  while(1);
+  uint16_t init_tries= 0;
+  while(BMX055_Init(&hi2c1) != 0 ){
+	  BMX055_Init(&hi2c1);
+	  init_tries++;
+//	  while(1);
   }
 
   /* USER CODE END 2 */
@@ -133,18 +135,41 @@ int main(void)
 
 	  int16_t rawAcc[3];
 	  int16_t rawGyro[3];
-	  int16_t rawMag[3];
-	  readAccelData(rawAcc, &hi2c1);
+	  int16_t rawMag[4];
+	  float temp;
+//	  readAccelData(rawAcc, &hi2c1);
 	  size = sprintf((char *)buffer, "Acc: %d %d %d ", (int)rawAcc[0], (int)rawAcc[1], (int)rawAcc[2]);
-	  CDC_Transmit_FS(buffer, size);
+//	  CDC_Transmit_FS(buffer, size);
+	  HAL_Delay(2);
 
-	  readGyroData(rawGyro, &hi2c1);
-	  size = sprintf((char *)buffer, " Gyro %d %d %d ",rawGyro[0], rawGyro[1], rawGyro[2]);
+	  /* Read all sensors acc,gyro,mag */
+	  BMX055_readAllSensors(&hi2c1, &data_BMX055);
+	  size = sprintf((char *)buffer, "/*%.2f,%.2f,%.2f,",data_BMX055.AccelX, data_BMX055.AccelY, data_BMX055.AccelZ);
 	  CDC_Transmit_FS(buffer, size);
+	  HAL_Delay(2);
+
+	  /* Get temperature from sensor BMX055 */
+	  readTemp_BMX055(&temp, &hi2c1);
+	  size = sprintf((char *)buffer, "%.2f,",temp);
+	  CDC_Transmit_FS(buffer, size);
+	  HAL_Delay(2);
+
+//	  readGyroData(rawGyro, &hi2c1);
+	  size = sprintf((char *)buffer, "%d,%d,%d,",rawGyro[0], rawGyro[1], rawGyro[2]);
+//	  CDC_Transmit_FS(buffer, size);
+	  HAL_Delay(2);
+
+	  size = sprintf((char *)buffer, "%.2f,%.2f,%.2f,",data_BMX055.GyroX, data_BMX055.GyroY, data_BMX055.GyroZ);
+	  CDC_Transmit_FS(buffer, size);
+	  HAL_Delay(2);
 
 	  readMagData(rawMag, &hi2c1);
-	  size = sprintf((char *)buffer, " Mag %d %d %d\n\r",rawMag[0], rawMag[1], rawMag[2]);
+	  size = sprintf((char *)buffer, "%d,%d,%d,%d*/\n\r",rawMag[0], rawMag[1], rawMag[2],rawMag[3]);
 	  CDC_Transmit_FS(buffer, size);
+	  HAL_Delay(2);
+
+
+
 
 
   }

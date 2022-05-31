@@ -22,11 +22,14 @@ float gyroBias[3] = {0.0, 0.0, 0.0};
 float accelBias[3] = {0.0, 0.0, 0.0};
 
 //Specify Sensor Scale
-uint8_t Gscale = 0;
-uint8_t Ascale = BMX055_ACC_RANGE_4G;
-uint8_t Mscale = 0;
+const uint8_t Gscale = BMX055_GYRO_RANGE_2000DPS;
+const uint8_t Ascale = BMX055_ACC_RANGE_4G;
+const uint8_t Mscale = 0;
 
-
+//Resolution each sensor
+float f_accRes = 1.0;
+float f_magRes = 1.0;
+float f_gyroRes = 1.0;
 
 uint8_t BMX055_Init(I2C_HandleTypeDef *I2Cx){
 	//pre-def. vars
@@ -81,11 +84,11 @@ uint8_t BMX055_Init(I2C_HandleTypeDef *I2Cx){
 	HAL_Delay(2);	/* Wait 2ms */
 
 	/* Select Gyro Range 262.4 LSB/°/s */
-	writeData = BMX055_GYRO_RANGE_2000;
+	writeData = Gscale;
 	HAL_I2C_Mem_Write(I2Cx, BMX055_GYRO_SLAVE_ADDRESS_DEFAULT<<1, BMX055_GYRO_RANGE_REG, 1, &writeData, 1, 500);
 
 	/* Select Gyro BandWidth */
-	writeData = BMX055_GYRO_BW_23;
+	writeData = BMX055_GYRO_BW_32;
 	HAL_I2C_Mem_Write(I2Cx, BMX055_GYRO_SLAVE_ADDRESS_DEFAULT<<1, BMX055_GYRO_BW_REG, 1, &writeData, 1, 500);
 
 	/* Select Gyro LPM (NormalMode, SleepDuration 2ms) */
@@ -102,8 +105,8 @@ uint8_t BMX055_Init(I2C_HandleTypeDef *I2Cx){
 //	writeData = BMX055_MAG_SLEEP_MODE;
 //	HAL_I2C_Mem_Write(I2Cx, BMX055_MAG_SLAVE_ADDRESS_DEFAULT<<1, BMX055_MAG_POW_CTL_REG, 1, &writeData, 1, 500);
 
-	/* Normal Mode */
-	writeData = 0x00;
+	/* Normal Mode , ODR 10Hz*/
+	writeData = BMX055_MAG_OP_MODE_NORMAL | BMX055_MAG_DATA_RATE_10;
 	HAL_I2C_Mem_Write(I2Cx, BMX055_MAG_SLAVE_ADDRESS_DEFAULT<<1, BMX055_MAG_ADV_OP_OUTPUT_REG, 1, &writeData, 1, 500);
 
 	/* Repetitions for X-Y Axis 0x04 -> 0b0100 -> 1+2(2^2) = 9 */
@@ -122,8 +125,21 @@ uint8_t BMX055_Init(I2C_HandleTypeDef *I2Cx){
 
 	//Init Accelerometer
 
+	/* Read Actual Accelerometer Resolution */
+	getAcc_Res();
+
+	/* Read Actual Gyroscope Resolution */
+	getGyro_Res();
+
 
 	return 0;
+}
+
+void readTemp_BMX055(float *destination, I2C_HandleTypeDef *I2Cx){
+	uint16_t rawData;
+	HAL_I2C_Mem_Read(I2Cx, BMX055_ACC_SLAVE_ADDRESS_DEFAULT<<1, BMX055_TEMP_SENSOR, 1, &rawData, 1, 500);
+	rawData = ((int16_t)((int16_t)rawData << 8)) >> 8 ;
+	*destination = ( (float) rawData )/2.0 + 23.0;
 }
 
 void readAccelData(int16_t *destination, I2C_HandleTypeDef *I2Cx){
@@ -132,11 +148,11 @@ void readAccelData(int16_t *destination, I2C_HandleTypeDef *I2Cx){
 
 	HAL_I2C_Mem_Read(I2Cx, BMX055_ACC_SLAVE_ADDRESS_DEFAULT<<1, BMX055_ACC_DATA_START_REG, 1, rawData, 6, 500);
 
-	if((rawData[0] & 0x01) && (rawData[2] & 0x01) && (rawData[4] & 0x01)) {  // Check that all 3 axes have new data
-	  destination[0] = (int16_t) (((int16_t)rawData[1] << 8) | rawData[0]) >> 4;  // Turn the MSB and LSB into a signed 12-bit value
-	  destination[1] = (int16_t) (((int16_t)rawData[3] << 8) | rawData[2]) >> 4;
-	  destination[2] = (int16_t) (((int16_t)rawData[5] << 8) | rawData[4]) >> 4;
-	  }
+//	if((rawData[0] & 0x01) && (rawData[2] & 0x01) && (rawData[4] & 0x01)) {  // Check that all 3 axes have new data
+		destination[0] = (int16_t) (((int16_t)rawData[1] << 8) | rawData[0]) >> 4;  // Turn the MSB and LSB into a signed 12-bit value
+		destination[1] = (int16_t) (((int16_t)rawData[3] << 8) | rawData[2]) >> 4;
+		destination[2] = (int16_t) (((int16_t)rawData[5] << 8) | rawData[4]) >> 4;
+//	}
 
 }
 
@@ -144,28 +160,27 @@ void readGyroData(int16_t *destination, I2C_HandleTypeDef *I2Cx){
 	uint8_t rawData[6];
 	HAL_I2C_Mem_Read(I2Cx, BMX055_GYRO_SLAVE_ADDRESS_DEFAULT<<1, BMX055_GYRO_DATA_START_REG, 1, rawData, 6, 500);
 
-	if((rawData[0] & 0x01) && (rawData[2] & 0x01) && (rawData[4] & 0x01)) {  // Check that all 3 axes have new data
+	destination[0] = (int16_t) (((int16_t)rawData[1] << 8) | rawData[0]);   // Turn the MSB and LSB into a signed 16-bit value
+	destination[1] = (int16_t) (((int16_t)rawData[3] << 8) | rawData[2]);
+	destination[2] = (int16_t) (((int16_t)rawData[5] << 8) | rawData[4]);
 
-		destination[0] = (int16_t) (((int16_t)rawData[1] << 8) | rawData[0]);   // Turn the MSB and LSB into a signed 16-bit value
-		destination[1] = (int16_t) (((int16_t)rawData[3] << 8) | rawData[2]);
-		destination[2] = (int16_t) (((int16_t)rawData[5] << 8) | rawData[4]);
-	}
 }
 
 void readMagData(int16_t *destination, I2C_HandleTypeDef *I2Cx){
-//	int16_t mdata_x = 0, mdata_y = 0, mdata_z = 0, temp = 0;
-//	uint16_t data_r = 0;
+	int16_t mdata_x = 0, mdata_y = 0, mdata_z = 0, temp = 0;
+	uint16_t data_r = 0;
 	uint8_t rawData[6];
-	HAL_I2C_Mem_Read(I2Cx, BMX055_MAG_SLAVE_ADDRESS_DEFAULT<<1, BMX055_MAG_DATA_START_REG, 1, rawData, 6, 2000);  // Read the eight raw data registers sequentially into data array
+	HAL_I2C_Mem_Read(I2Cx, BMX055_MAG_SLAVE_ADDRESS_DEFAULT<<1, BMX055_MAG_DATA_START_REG, 1, rawData, 8, 2000);  // Read the eight raw data registers sequentially into data array
 
 //	if(rawData[6] & 0x01) { // Check if data ready status bit is set
 		destination[0] = (int16_t) (((int16_t)rawData[1] << 8) | rawData[0]) >> 3;  // 13-bit signed integer for x-axis field
 		destination[1] = (int16_t) (((int16_t)rawData[3] << 8) | rawData[2]) >> 3;  // 13-bit signed integer for y-axis field
 		destination[2] = (int16_t) (((int16_t)rawData[5] << 8) | rawData[4]) >> 1;  // 15-bit signed integer for z-axis field
-//		data_r = (uint16_t) (((uint16_t)rawData[7] << 8) | rawData[6]) >> 2;  // 14-bit unsigned integer for Hall resistance
+		data_r = (uint16_t) (((uint16_t)rawData[7] << 8) | rawData[6]) >> 2;  // 14-bit unsigned integer for Hall resistance
 
 	// calculate temperature compensated 16-bit magnetic fields
 //	temp = ((int16_t)(((uint16_t)((((int32_t)dig_xyz1) << 14)/(data_r != 0 ? data_r : dig_xyz1))) - ((uint16_t)0x4000)));
+//	destination[2] = temp;
 //	magData[0] = ((int16_t)((((int32_t)mdata_x) *
 //				((((((((int32_t)dig_xy2) * ((((int32_t)temp) * ((int32_t)temp)) >> 7)) +
 //				 (((int32_t)temp) * ((int32_t)(((int16_t)dig_xy1) << 7)))) >> 9) +
@@ -188,9 +203,93 @@ void readMagData(int16_t *destination, I2C_HandleTypeDef *I2Cx){
 
 uint8_t SetScaleAcce(uint8_t AccScale){
 
+}
+
+void getMag_Res(uint16_t Mscale){
+	switch (Mscale)
+	  {
+//	  // Possible magnetometer scales (and their register bit settings) are:
+//	  // 14 bit resolution (0) and 16 bit resolution (1)
+//	    case MFS_14BITS:
+//	          mRes = 10.*4912./8190.; // Proper scale to return milliGauss
+//	          break;
+//	    case MFS_16BITS:
+//	          mRes = 10.*4912./32760.0; // Proper scale to return milliGauss
+//	          break;
+	  }
+}
+
+void getAcc_Res(void){
+	  switch (Ascale)
+	  {
+	 	// Possible accelerometer scales (and their register bit settings) are:
+		// 2 Gs (0011), 4 Gs (0101), 8 Gs (1000), and 16 Gs  (1100).
+	        // BMX055 ACC data is signed 12 bit
+	    case BMX055_ACC_RANGE_2G:
+	          f_accRes = 2.0/2048.0;
+	          break;
+	    case BMX055_ACC_RANGE_4G:
+	    	f_accRes = 4.0/2048.0;
+	          break;
+	    case BMX055_ACC_RANGE_8G:
+	    	f_accRes = 8.0/2048.0;
+	          break;
+	    case BMX055_ACC_RANGE_16G:
+	    	f_accRes = 16.0/2048.0;
+	          break;
+	  }
+}
+
+void getGyro_Res(void){
+
+	switch (Gscale)
+		  {
+		 	// Possible accelerometer scales (and their register bit settings) are:
+			// 2 Gs (0011), 4 Gs (0101), 8 Gs (1000), and 16 Gs  (1100).
+		        // BMX055 ACC data is signed 12 bit
+		    case BMX055_GYRO_RANGE_2000DPS:
+		    	f_gyroRes =1998.0/32768.0;
+		          break;
+		    case BMX055_GYRO_RANGE_1000DPS:
+		    	f_gyroRes = 999.0/32768.0;
+		    	break;
+		    case BMX055_GYRO_RANGE_500DPS:
+		    	f_gyroRes = 499.5/32768.0;
+		    	break;
+		    case BMX055_GYRO_RANGE_250DPS:
+		    	f_gyroRes = 249.75/32768.0;
+		    	break;
+		    case BMX055_GYRO_RANGE_125DPS:
+		    	f_gyroRes = 124.87/32768.0;
+		    	break;
+		  }
 
 }
 
+void BMX055_readAllSensors(I2C_HandleTypeDef *I2Cx, BMX055_t *DataStruct){
+	int16_t accelCount[3];
+	int16_t gyroCount[3];
+
+	/* Read (x,y,z) accelerometer values */
+	readAccelData(accelCount, I2Cx);
+
+	/* Calculate actual values in G's */
+	DataStruct->AccelX = (float)((int)accelCount[0]*f_accRes);
+	DataStruct->AccelY = (float)((int)accelCount[1]*f_accRes);
+	DataStruct->AccelZ = (float)((int)accelCount[2]*f_accRes);
+
+	/* Read (x,y,z) gyroscope values */
+	readGyroData(gyroCount, I2Cx);
+
+	/* Calculate actual values in °/s */
+	DataStruct->GyroX = (float)((int)gyroCount[0]*f_gyroRes);
+	DataStruct->GyroY = (float)((int)gyroCount[1]*f_gyroRes);
+	DataStruct->GyroZ = (float)((int)gyroCount[2]*f_gyroRes);
+
+	/* Read (x,y,z) magnetometer */
+
+
+}
 
 uint8_t SearchDevice(I2C_HandleTypeDef *I2Cx){
 	uint8_t ret = 0;

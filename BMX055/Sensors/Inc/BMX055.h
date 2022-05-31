@@ -43,6 +43,7 @@
 #define BMX055_ACC_PMU_RANGE_REG			0x0F
 #define BMX055_ACC_PMU_BW_REG				0x10
 #define BMX055_ACC_PMU_LPW_REG				0x11
+#define BMX055_TEMP_SENSOR					0x08
 /// @}
 
 /// @name BMX055 Gyro Register
@@ -120,15 +121,15 @@
 /// @name Gyroscope Measurement Range
 /// @{
 /* Scale +-2000°/s Resolution 16.4 LSB/°/s <-> 61m°/s /LSB */
-#define BMX055_GYRO_RANGE_2000	0x00
+#define BMX055_GYRO_RANGE_2000DPS	0x00
 /* Scale +-1000°/s Resolution 32.8 LSB/°/s <-> 30.5m°/s /LSB */
-#define BMX055_GYRO_RANGE_1000	0x01
+#define BMX055_GYRO_RANGE_1000DPS	0x01
 /* Scale +-500°/s Resolution 65.6 LSB/°/s <-> 15.3m°/s /LSB */
-#define BMX055_GYRO_RANGE_500	0x02
+#define BMX055_GYRO_RANGE_500DPS	0x02
 /* Scale +-250°/s Resolution 131.2 LSB/°/s <-> 7.6m°/s /LSB */
-#define BMX055_GYRO_RANGE_250	0x03
+#define BMX055_GYRO_RANGE_250DPS	0x03
 /* Scale +-125°/s Resolution 262.4 LSB/°/s <-> 3.8m°/s /LSB */
-#define BMX055_GYRO_RANGE_125	0x04
+#define BMX055_GYRO_RANGE_125DPS	0x04
 /// @}
 
 /// @name Gyroscope MPU Band Width Filter Parameter(Hz)
@@ -164,13 +165,21 @@
 
 /// @name Mag Datarate Control Parameter
 /// @{
+/* Magnetometer Output Data Rate 10Hz */
 #define BMX055_MAG_DATA_RATE_10 0b000000
+/* Magnetometer Output Data Rate 2Hz */
 #define BMX055_MAG_DATA_RATE_2	0b001000
+/* Magnetometer Output Data Rate 6Hz */
 #define BMX055_MAG_DATA_RATE_6	0b010000
+/* Magnetometer Output Data Rate 8Hz */
 #define BMX055_MAG_DATA_RATE_8	0b011000
+/* Magnetometer Output Data Rate 15Hz */
 #define BMX055_MAG_DATA_RATE_15	0b100000
+/* Magnetometer Output Data Rate 20Hz */
 #define BMX055_MAG_DATA_RATE_20	0b101000
+/* Magnetometer Output Data Rate 25Hz */
 #define BMX055_MAG_DATA_RATE_25	0b110000
+/* Magnetometer Output Data Rate 30Hz */
 #define BMX055_MAG_DATA_RATE_30	0b111000
 /// @}
 
@@ -269,8 +278,16 @@ uint8_t SearchDevice(I2C_HandleTypeDef *I2Cx);
 
 void readAccelData(int16_t *destination, I2C_HandleTypeDef *I2Cx);
 
+void readTemp_BMX055(float *destination, I2C_HandleTypeDef *I2Cx);
+
 void readGyroData(int16_t *destination, I2C_HandleTypeDef *I2Cx);
 
 void readMagData(int16_t *destination, I2C_HandleTypeDef *I2Cx);
+
+void BMX055_readAllSensors(I2C_HandleTypeDef *I2Cx, BMX055_t *DataStruct);
+
+void getAcc_Res(void);
+
+void getGyro_Res(void);
 
 #endif /* BMX055_H_ */
